@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏛️ Иерархия Prizm Imperium</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="data.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">🏛️ Prizm Imperium</h1>
+                <p class="subtitle">Иерархия империи | Обновлено: <span id="update-date">Загрузка...</span></p>
+                <div class="stats-bar">
+                    <div class="stat">
+                        <span class="stat-value" id="total-rulers">0</span>
+                        <span class="stat-label">Правителей</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="active-rulers">0</span>
+                        <span class="stat-label">Активных</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="total-connections">0</span>
+                        <span class="stat-label">Связей</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="update-time">0</span>
+                        <span class="stat-label">сек назад</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Поиск -->
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" 
+                       id="search-input" 
+                       placeholder="Поиск по ID или имени..."
+                       autocomplete="off">
+                <button id="search-btn" class="btn">🔍 Поиск</button>
+                <button id="clear-search" class="btn btn-secondary">❌ Очистить</button>
+                <button id="highlight-connections" class="btn">🔗 Связи</button>
+                <button id="reset-view" class="btn">⟲ Сброс</button>
+            </div>
+            <div class="search-results" id="search-results"></div>
+        </div>
+
+        <!-- График -->
+        <div class="visualization-section">
+            <svg id="graph" width="100%" height="700"></svg>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Загрузка иерархии...</p>
+            </div>
+        </div>
+
+        <!-- Легенда -->
+        <div class="legend-section">
+            <div class="legend">
+                <h3>📋 Легенда</h3>
+                <div class="legend-items">
+                    <!-- Заполняется JavaScript -->
+                </div>
+            </div>
+            
+            <div class="controls">
+                <h3>🎮 Управление</h3>
+                <ul class="controls-list">
+                    <li>• <strong>Поиск</strong> - введите ID или имя</li>
+                    <li>• <strong>Клик</strong> на узел - подробности</li>
+                    <li>• <strong>Перетаскивание</strong> - перемещение узлов</li>
+                    <li>• <strong>Колесико</strong> - масштаб</li>
+                    <li>• <strong>Двойной клик</strong> - сброс масштаба</li>
+                    <li>• <strong>"Связи"</strong> - показать связи выделенного узла</li>
+                </ul>
+            </div>
+
+            <div class="info-panel" id="node-info">
+                <h3>👤 Выберите правителя</h3>
+                <p>Кликните на любой узел или найдите через поиск</p>
+            </div>
+        </div>
+
+        <!-- Подсказка -->
+        <div class="tooltip" id="tooltip"></div>
+
+        <!-- Подвал -->
+        <footer class="footer">
+            <p>Prizm Imperium Hierarchy Visualizer | Обновляется автоматически</p>
+            <p class="footer-note">Для корректного отображения используйте современный браузер</p>
+        </footer>
+    </div>
+
+    <script src="visualization.js"></script>
+</body>
+</html>
