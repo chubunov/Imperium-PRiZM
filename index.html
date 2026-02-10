@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="data.js" defer></script>
+    <script src="visualization.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -64,8 +65,23 @@
         <div class="legend-section">
             <div class="legend">
                 <h3>📋 Легенда</h3>
-                <div class="legend-items">
-                    <!-- Заполняется JavaScript -->
+                <div class="legend-items" id="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FFD700; border-color: #FFD700"></div>
+                        <div class="legend-text">Администратор</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4CAF50; border-color: #4CAF50"></div>
+                        <div class="legend-text">Активный</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF9800; border-color: #FF9800"></div>
+                        <div class="legend-text">Ожидает</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #9E9E9E; border-color: #9E9E9E"></div>
+                        <div class="legend-text">Неактивный</div>
+                    </div>
                 </div>
             </div>
             
@@ -97,6 +113,26 @@
         </footer>
     </div>
 
-    <script src="visualization.js"></script>
+    <script>
+        // Инициализация при полной загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM загружен, инициализируем визуализацию...');
+            
+            // Проверяем наличие данных
+            if (typeof getVisualizationData !== 'undefined') {
+                const data = getVisualizationData();
+                console.log('Данные загружены:', data);
+                console.log('Узлов:', data.nodes.length);
+                console.log('Связей:', data.links.length);
+                
+                // Инициализируем визуализацию
+                window.visualizer = new ImperialVisualizer();
+            } else {
+                console.error('Функция getVisualizationData не найдена!');
+                document.getElementById('loading').innerHTML = 
+                    '<div style="color: #f44336; text-align: center;">❌ Ошибка загрузки данных. Проверьте файл data.js</div>';
+            }
+        });
+    </script>
 </body>
 </html>
