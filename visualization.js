@@ -2,7 +2,19 @@
 
 class ImperialVisualizer {
     constructor() {
+        console.log('Инициализация ImperialVisualizer...');
+        
+        // Получаем данные
+        if (typeof getVisualizationData === 'undefined') {
+            console.error('Ошибка: функция getVisualizationData не найдена!');
+            document.getElementById('loading').innerHTML = 
+                '<div style="color: #f44336; text-align: center; padding: 20px;">❌ Ошибка: данные не загружены</div>';
+            return;
+        }
+        
         this.data = getVisualizationData();
+        console.log('Данные получены, узлов:', this.data.nodes.length);
+        
         this.highlightedNodeId = null;
         this.selectedNodeId = null;
         
@@ -12,21 +24,33 @@ class ImperialVisualizer {
         this.height = 700;
         this.container = this.svg.append("g");
         this.tooltip = d3.select("#tooltip");
-        this.searchInput = document.getElementById('search-input');
-        this.searchResults = document.getElementById('search-results');
         this.nodeInfo = document.getElementById('node-info');
         
+        // Инициализация
         this.init();
     }
     
     init() {
-        this.setupZoom();
-        this.createLegend();
-        this.renderGraph();
-        this.setupEventListeners();
+        console.log('Инициализация визуализации...');
         
-        // Скрываем загрузку
-        document.getElementById('loading').style.display = 'none';
+        try {
+            this.setupZoom();
+            this.renderGraph();
+            this.setupEventListeners();
+            
+            // Скрываем загрузку
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+            
+            console.log('Визуализация успешно инициализирована');
+            
+        } catch (error) {
+            console.error('Ошибка при инициализации:', error);
+            document.getElementById('loading').innerHTML = 
+                '<div style="color: #f44336; text-align: center; padding: 20px;">❌ Ошибка при создании визуализации</div>';
+        }
     }
     
     setupZoom() {
@@ -39,26 +63,9 @@ class ImperialVisualizer {
         this.svg.call(zoom);
     }
     
-    createLegend() {
-        const legendItems = document.querySelector('.legend-items');
-        
-        const legendData = [
-            { color: '#FFD700', text: 'Администратор' },
-            { color: '#4CAF50', text: 'Активный' },
-            { color: '#FF9800', text: 'Ожидает' },
-            { color: '#9E9E9E', text: 'Неактивный' },
-            { color: '#FF4081', text: 'Выделенный' }
-        ];
-        
-        legendItems.innerHTML = legendData.map(item => `
-            <div class="legend-item">
-                <div class="legend-color" style="background: ${item.color}; border-color: ${item.color}"></div>
-                <div class="legend-text">${item.text}</div>
-            </div>
-        `).join('');
-    }
-    
     renderGraph() {
+        console.log('Отрисовка графа...');
+        
         // Очищаем предыдущий граф
         this.container.selectAll("*").remove();
         
@@ -66,19 +73,19 @@ class ImperialVisualizer {
         this.simulation = d3.forceSimulation(this.data.nodes)
             .force("link", d3.forceLink(this.data.links)
                 .id(d => d.id)
-                .distance(150))
-            .force("charge", d3.forceManyBody().strength(-400))
+                .distance(100))
+            .force("charge", d3.forceManyBody().strength(-300))
             .force("center", d3.forceCenter(this.width / 2, this.height / 2))
-            .force("collision", d3.forceCollide().radius(50));
+            .force("collision", d3.forceCollide().radius(40));
         
         // Создаем связи
         this.link = this.container.append("g")
             .selectAll("line")
             .data(this.data.links)
             .join("line")
-            .attr("class", d => `link ${d.isHighlighted ? 'highlighted' : ''}`)
+            .attr("class", "link")
             .attr("stroke", d => this.getLinkColor(d))
-            .attr("stroke-width", d => d.isHighlighted ? 3 : 2)
+            .attr("stroke-width", 2)
             .attr("stroke-dasharray", d => d.flank === 2 ? "5,5" : "none");
         
         // Создаем узлы
@@ -86,7 +93,7 @@ class ImperialVisualizer {
             .selectAll("g")
             .data(this.data.nodes)
             .join("g")
-            .attr("class", d => `node ${d.isHighlighted ? 'highlighted' : ''}`)
+            .attr("class", "node")
             .call(d3.drag()
                 .on("start", this.dragstarted.bind(this))
                 .on("drag", this.dragged.bind(this))
@@ -94,10 +101,10 @@ class ImperialVisualizer {
         
         // Круги узлов
         this.node.append("circle")
-            .attr("r", d => d.isHighlighted ? 35 : 30)
+            .attr("r", 25)
             .attr("fill", d => d.color)
             .attr("stroke", d => d.borderColor || '#CCCCCC')
-            .attr("stroke-width", d => d.borderWidth || 1)
+            .attr("stroke-width", d => d.borderWidth || 2)
             .on("mouseover", this.showTooltip.bind(this))
             .on("mouseout", this.hideTooltip.bind(this))
             .on("click", this.selectNode.bind(this));
@@ -107,9 +114,9 @@ class ImperialVisualizer {
             .text(d => d.label)
             .attr("text-anchor", "middle")
             .attr("dy", "0.35em")
-            .attr("fill", "black")
+            .attr("fill", "white")
             .attr("font-weight", "bold")
-            .attr("font-size", d => d.isHighlighted ? "20px" : "16px")
+            .attr("font-size", "16px")
             .style("pointer-events", "none");
         
         // Обновление позиций
@@ -122,6 +129,8 @@ class ImperialVisualizer {
             
             this.node.attr("transform", d => `translate(${d.x},${d.y})`);
         });
+        
+        console.log('Граф отрисован');
     }
     
     getLinkColor(link) {
@@ -181,7 +190,9 @@ class ImperialVisualizer {
     }
     
     selectNode(event, d) {
+        console.log('Выбран узел:', d.id, d.username);
         this.selectedNodeId = d.id;
+        this.highlightNode(d.id);
         this.showNodeDetails(d);
     }
     
@@ -196,64 +207,91 @@ class ImperialVisualizer {
                 <p><strong>Статус:</strong> ${this.getStatusText(node.status)}</p>
                 <p><strong>Фланг:</strong> ${node.position === 1 ? 'Левый' : node.position === 2 ? 'Центр' : node.position === 3 ? 'Правый' : 'Не указан'}</p>
             </div>
-            <button onclick="visualizer.highlightNode(${node.id})" class="btn" style="margin-top: 10px; width: 100%;">
+            <button onclick="window.visualizer.highlightNode(${node.id})" class="btn" style="margin-top: 10px; width: 100%;">
                 🔍 Выделить этого правителя
             </button>
         `;
     }
     
     highlightNode(nodeId) {
+        console.log('Выделение узла:', nodeId);
+        
         // Снимаем выделение со всех
-        this.data.nodes.forEach(n => n.isHighlighted = false);
+        this.data.nodes.forEach(n => {
+            n.isHighlighted = false;
+            n.previousR = 25;
+        });
+        
         this.data.links.forEach(l => l.isHighlighted = false);
         
         // Выделяем выбранный узел
         const node = this.data.nodes.find(n => n.id === nodeId);
         if (node) {
             node.isHighlighted = true;
+            node.previousR = 25;
             this.highlightedNodeId = nodeId;
             this.selectedNodeId = nodeId;
             
+            // Обновляем отображение
+            this.updateNodeAppearance();
+            
             // Показываем детали
             this.showNodeDetails(node);
-            
-            // Обновляем граф
-            this.renderGraph();
-            
-            // Центрируем на узле
-            this.centerOnNode(nodeId);
         }
     }
     
-    centerOnNode(nodeId) {
-        const node = this.data.nodes.find(n => n.id === nodeId);
-        if (!node || !node.x) return;
+    updateNodeAppearance() {
+        this.node.selectAll("circle")
+            .transition()
+            .duration(300)
+            .attr("r", d => d.isHighlighted ? 35 : 25)
+            .attr("stroke-width", d => d.isHighlighted ? 4 : d.borderWidth || 2);
         
-        const transform = d3.zoomIdentity
-            .translate(this.width / 2 - node.x, this.height / 2 - node.y)
-            .scale(1.5);
+        this.node.selectAll("text")
+            .transition()
+            .duration(300)
+            .attr("font-size", d => d.isHighlighted ? "20px" : "16px");
         
-        this.svg.transition()
-            .duration(750)
-            .call(this.svg.__zoom.transform, transform);
+        this.link
+            .transition()
+            .duration(300)
+            .attr("stroke-width", d => d.isHighlighted ? 3 : 2)
+            .attr("stroke", d => this.getLinkColor(d));
     }
     
     setupEventListeners() {
+        console.log('Настройка обработчиков событий...');
+        
         // Поиск
-        document.getElementById('search-btn').addEventListener('click', () => this.performSearch());
-        document.getElementById('clear-search').addEventListener('click', () => this.clearSearch());
-        document.getElementById('highlight-connections').addEventListener('click', () => this.highlightConnections());
-        document.getElementById('reset-view').addEventListener('click', () => this.resetView());
+        const searchBtn = document.getElementById('search-btn');
+        const clearSearchBtn = document.getElementById('clear-search');
+        const highlightConnectionsBtn = document.getElementById('highlight-connections');
+        const resetViewBtn = document.getElementById('reset-view');
+        const searchInput = document.getElementById('search-input');
+        
+        if (searchBtn) searchBtn.addEventListener('click', () => this.performSearch());
+        if (clearSearchBtn) clearSearchBtn.addEventListener('click', () => this.clearSearch());
+        if (highlightConnectionsBtn) highlightConnectionsBtn.addEventListener('click', () => this.highlightConnections());
+        if (resetViewBtn) resetViewBtn.addEventListener('click', () => this.resetView());
         
         // Поиск по Enter
-        this.searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.performSearch();
-        });
+        if (searchInput) {
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.performSearch();
+            });
+        }
+        
+        console.log('Обработчики событий настроены');
     }
     
     performSearch() {
-        const query = this.searchInput.value.trim().toLowerCase();
+        const searchInput = document.getElementById('search-input');
+        if (!searchInput) return;
+        
+        const query = searchInput.value.trim().toLowerCase();
         if (!query) return;
+        
+        console.log('Поиск:', query);
         
         const results = this.data.nodes.filter(node => 
             node.id.toString().includes(query) ||
@@ -265,10 +303,13 @@ class ImperialVisualizer {
     }
     
     showSearchResults(results) {
-        this.searchResults.innerHTML = '';
+        const searchResults = document.getElementById('search-results');
+        if (!searchResults) return;
+        
+        searchResults.innerHTML = '';
         
         if (results.length === 0) {
-            this.searchResults.innerHTML = '<div class="search-result-item">Ничего не найдено</div>';
+            searchResults.innerHTML = '<div class="search-result-item">Ничего не найдено</div>';
         } else {
             results.forEach(r => {
                 const item = document.createElement('div');
@@ -278,31 +319,39 @@ class ImperialVisualizer {
                         <div class="search-result-username">${r.label} ${r.username}</div>
                         <div class="search-result-details">ID: ${r.id} | ${r.title} | ${r.treasury.toLocaleString('ru-RU')} PZM</div>
                     </div>
-                    <button onclick="visualizer.highlightNode(${r.id})" style="padding: 5px 10px; font-size: 12px;">🔍</button>
+                    <button onclick="window.visualizer.highlightNode(${r.id})" style="padding: 5px 10px; font-size: 12px; background: #764ba2; color: white; border: none; border-radius: 4px; cursor: pointer;">🔍</button>
                 `;
                 item.addEventListener('click', () => this.highlightNode(r.id));
-                this.searchResults.appendChild(item);
+                searchResults.appendChild(item);
             });
         }
         
-        this.searchResults.style.display = 'block';
+        searchResults.style.display = 'block';
     }
     
     clearSearch() {
-        this.searchInput.value = '';
-        this.searchResults.style.display = 'none';
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        
+        if (searchInput) searchInput.value = '';
+        if (searchResults) searchResults.style.display = 'none';
         
         // Снимаем выделение
-        this.data.nodes.forEach(n => n.isHighlighted = false);
+        this.data.nodes.forEach(n => {
+            n.isHighlighted = false;
+        });
+        
         this.data.links.forEach(l => l.isHighlighted = false);
         this.highlightedNodeId = null;
-        this.renderGraph();
+        this.updateNodeAppearance();
         
         // Сбрасываем информацию о узле
-        this.nodeInfo.innerHTML = `
-            <h3>👤 Выберите правителя</h3>
-            <p>Кликните на любой узел или найдите через поиск</p>
-        `;
+        if (this.nodeInfo) {
+            this.nodeInfo.innerHTML = `
+                <h3>👤 Выберите правителя</h3>
+                <p>Кликните на любой узел или найдите через поиск</p>
+            `;
+        }
     }
     
     highlightConnections() {
@@ -311,22 +360,26 @@ class ImperialVisualizer {
             return;
         }
         
+        console.log('Показать связи для узла:', this.highlightedNodeId);
+        
         // Находим все связанные узлы
         const connectedNodeIds = new Set([this.highlightedNodeId]);
         
-        // Находим предков
+        // Находим предков (кто ссылается на этот узел)
         this.data.links.forEach(link => {
-            if (link.target.id === this.highlightedNodeId) {
-                connectedNodeIds.add(link.source.id);
+            if (link.target === this.highlightedNodeId) {
+                connectedNodeIds.add(link.source);
             }
         });
         
-        // Находим потомков
+        // Находим потомков (на кого ссылается этот узел)
         this.data.links.forEach(link => {
-            if (link.source.id === this.highlightedNodeId) {
-                connectedNodeIds.add(link.target.id);
+            if (link.source === this.highlightedNodeId) {
+                connectedNodeIds.add(link.target);
             }
         });
+        
+        console.log('Связанные узлы:', Array.from(connectedNodeIds));
         
         // Снимаем выделение со всех
         this.data.nodes.forEach(n => n.isHighlighted = false);
@@ -341,12 +394,13 @@ class ImperialVisualizer {
         
         // Выделяем связи между связанными узлами
         this.data.links.forEach(l => {
-            if (connectedNodeIds.has(l.source.id) && connectedNodeIds.has(l.target.id)) {
+            if (connectedNodeIds.has(l.source) && connectedNodeIds.has(l.target)) {
                 l.isHighlighted = true;
             }
         });
         
-        this.renderGraph();
+        // Обновляем отображение
+        this.updateNodeAppearance();
     }
     
     resetView() {
@@ -360,10 +414,19 @@ class ImperialVisualizer {
     }
 }
 
-// Глобальная переменная для доступа из HTML
-let visualizer;
-
 // Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-    visualizer = new ImperialVisualizer();
+window.addEventListener('load', function() {
+    console.log('Страница полностью загружена');
+    
+    // Даем небольшую задержку для полной загрузки всех ресурсов
+    setTimeout(function() {
+        if (typeof ImperialVisualizer !== 'undefined') {
+            console.log('Запуск визуализатора...');
+            window.visualizer = new ImperialVisualizer();
+        } else {
+            console.error('ImperialVisualizer не определен!');
+            document.getElementById('loading').innerHTML = 
+                '<div style="color: #f44336; text-align: center; padding: 20px;">❌ Ошибка: визуализатор не загружен</div>';
+        }
+    }, 100);
 });
