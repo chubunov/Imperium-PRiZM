@@ -134,5 +134,79 @@
             }
         });
     </script>
+<div id="debug-console" style="
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 12px;
+    max-width: 400px;
+    max-height: 300px;
+    overflow: auto;
+    z-index: 9999;
+    border-left: 4px solid #FF4081;
+    display: none;
+">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <strong>Консоль ошибок</strong>
+        <button onclick="document.getElementById('debug-console').style.display='none'" style="background: #FF4081; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer;">X</button>
+    </div>
+    <div id="debug-log"></div>
+</div>
+
+<script>
+// Перехватываем все ошибки
+window.addEventListener('error', function(event) {
+    const debugLog = document.getElementById('debug-log');
+    const debugConsole = document.getElementById('debug-console');
+    
+    debugConsole.style.display = 'block';
+    
+    const errorMsg = `
+        <div style="color: #FF6B6B; margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 5px;">
+            <strong>❌ ${event.message}</strong><br>
+            <small>Файл: ${event.filename || 'неизвестно'}</small><br>
+            <small>Строка: ${event.lineno || '?'}:${event.colno || '?'}</small>
+        </div>
+    `;
+    
+    debugLog.innerHTML = errorMsg + debugLog.innerHTML;
+});
+
+// Логируем загрузку
+console.log = function(...args) {
+    const debugLog = document.getElementById('debug-log');
+    const debugConsole = document.getElementById('debug-console');
+    
+    debugConsole.style.display = 'block';
+    
+    const logMsg = `<div style="color: #4ECDC4; margin-bottom: 5px;">📝 ${args.join(' ')}</div>`;
+    debugLog.innerHTML = logMsg + debugLog.innerHTML;
+    
+    // Также выводим в оригинальную консоль
+    originalConsoleLog.apply(console, args);
+};
+
+const originalConsoleLog = console.log;
+
+// Проверяем загрузку скриптов
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM загружен');
+    
+    // Проверяем загрузку D3.js
+    if (typeof d3 === 'undefined') {
+        console.error('D3.js не загружен!');
+    } else {
+        console.log('D3.js загружен, версия:', d3.version);
+    }
+    
+    // Проверяем загрузку наших скриптов
+    console.log('Проверка загрузки скриптов...');
+});
+</script>
 </body>
 </html>
